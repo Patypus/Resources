@@ -1,0 +1,19 @@
+<head>
+        <meta charset="utf-8">
+        <title>Custard Creams Order Form</title>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.1/knockout-min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+                integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+                crossorigin="anonymous"></script>
+        <script src="OrderFormViewModel.js"></script>
+</head>
+<body>
+    <h1>Custard Cream Order Form</h1>
+    <input type="number" data-bind="value: amount"/>
+    <button data-bind="click: placeOrder"/>Place Order</button>
+    <label data-bind="text: infoLabel"></label>
+</body>
+<script>
+    ko.applyBindings(new OrderFormViewModel());
+</script>

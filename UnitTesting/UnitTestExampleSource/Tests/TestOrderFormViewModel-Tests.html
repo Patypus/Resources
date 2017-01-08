@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>OrderFormViewModel Tests</title>
+  <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.1.1.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://code.jquery.com/qunit/qunit-2.1.1.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.1/knockout-debug.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>
+  <script src="../OrderFormViewModel.js"></script>
+</body>
+
+<script>
+    QUnit.module("placeOrder", {
+      //This is some setup for the environment each test is run in. After each test is run this
+      //method is called to clear up any setup mockjax functions to prevent tests interfering
+      //with one another. 
+      afterEach: function () {
+        $.mockjaxClear();
+      }
+    });
+
+    //Tests that the first if block in placeOrder works. This test will fail due to a typo in the message that is set
+    QUnit.test( "Odrering less than 5 sets correct warning message in infoLabel", function( assert ) {
+        //Setup
+        var model = new OrderFormViewModel();
+        model.amount(2); //test data setup the alters the behaviour of the test
+        
+        //Act
+        model.placeOrder();
+
+        //Assert
+        var expectedMessage = "less than 5 biscuits? surely not?";
+        var labelMessage = model.infoLabel();
+        assert.equal(labelMessage, expectedMessage);
+    });
+
+    //Tests that the return is in that first if block and the ajax call is not executed.
+    //This tests a different part of that first if block in isolation from the message test as they
+    //are testing 2 different aspects of what happens in that if block which may change independantly
+    //of each other.
+    QUnit.test("Odrering less than 5 does not call the API method", function(assert) {
+        //setup
+        var done = assert.async();
+        //setup for the mock ajax api
+        $.mockjax({
+          url: "/api/orders/submitOrder",
+          responseTime: 10,
+          responseText: {
+            status: "success",
+          }
+        });
+        
+        var model = new OrderFormViewModel();
+        model.amount(3); 
+        
+        //Act
+        model.placeOrder();
+
+        //Assert
+        var mockedAjaxCalls = $.mockjax.mockedAjaxCalls();
+        assert.equal(mockedAjaxCalls.length, 0);
+        done();
+    });
+
+    //Tests that the else if block works as intended. This will pass
+    QUnit.test( "Odrering less more that 500 sets correct congratulations message in infoLabel", function( assert ) {
+        //Setup
+        var model = new OrderFormViewModel();
+        model.amount(600); 
+        
+        //Act
+        model.placeOrder();
+
+        //Assert
+        var expectedMessage = "That is a respectable amount of Custard Creams";
+        var labelMessage = model.infoLabel();
+        assert.equal(labelMessage, expectedMessage);
+    });
+
+    //Tests that the final else condition sets the correct message when the correct value is setup.
+    QUnit.test( "Ordering an ammount between 5 and 500 sets placing order infor message", function( assert ) {
+        //Setup
+        var model = new OrderFormViewModel();
+        model.amount(100);
+        
+        //Act
+        model.placeOrder();
+
+        //Assert
+        var expectedMessage = "Placing order...";
+        var labelMessage = model.infoLabel();
+        assert.equal(labelMessage, expectedMessage);
+    });
+
+    QUnit.test("Success returned form ajax API displed in info messag", function(assert) {
+        //setup
+        var done = assert.async();
+        
+        $.mockjax({
+          url: "/api/orders/submitOrder",
+          responseTime: 10,
+          responseText: {
+            status: "success",
+          }
+        });
+
+        var model = new OrderFormViewModel();
+        model.amount(17);
+        
+        //Act
+        model.placeOrder();
+
+        //Assert
+        setTimeout(function() {
+          var messageAfterCall = model.infoLabel();
+          assert.equal(messageAfterCall, "Order placed successfully");
+          done();
+        }, 300);
+    });
+
+    QUnit.test("Error reported by ajax API is displyed in info message", function (assert) {
+      //setup
+      var done = assert.async();
+      var serverMessage = "-server error message-";
+
+      $.mockjax({
+        url: "/api/orders/submitOrder",
+        contentType: 'text/json',
+        responseTime: 10,
+        responseText: {
+          status: "error",
+          message: serverMessage
+        }
+      });
+
+      var model = new OrderFormViewModel();
+      model.amount(17);
+      
+      //Act
+      model.placeOrder();
+
+      //Assert
+      setTimeout(function() {
+        var messageAfterCall = model.infoLabel();
+        assert.ok(messageAfterCall.includes(serverMessage));
+        done();
+      }, 300);
+    });
+</script>
+
+</html>
